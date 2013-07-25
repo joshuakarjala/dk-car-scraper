@@ -29,6 +29,3 @@ def get_car_details(license_place):
         'car_version': model_array[2],
         'year': year_string.split('-')[-1]
     }
-
-#test case
-print get_car_details('bg57691')
