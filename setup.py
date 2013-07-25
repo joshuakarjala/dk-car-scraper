@@ -18,7 +18,7 @@ CLASSIFIERS = [
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 
-INSTALL_REQUIRES = ['requests', 'pyquery']
+INSTALL_REQUIRES = ['requests', 'beautifulsoup4']
 try:
     import importlib
 except ImportError:
@@ -26,7 +26,7 @@ except ImportError:
 
 tests_require = [
     'requests>=1.2',
-    'pyquery'
+    'beautifulsoup4'
 ]
 
 setup(
