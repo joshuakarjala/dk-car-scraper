@@ -20,11 +20,13 @@ def get_car_details(license_plate, details=False):
         SEARCH_FORM_NAME: license_plate
     }
 
-    car_info = _min_car_info(session, payload)
-    if details:
+    car_found, car_info = _min_car_info(session, payload)
+
+    if car_found and details:
         car_info.update(_technical_car_info(session))
         car_info.update(_insurance_car_info(session))
         return car_info
+
     return car_info
 
 
@@ -43,6 +45,11 @@ def _min_car_info(session, payload):
     response = session.post('https://motorregister.skat.dk/dmr-front/appmanager/skat/dmr?_nfpb=true&_windowLabel=kerne_vis_koeretoej&kerne_vis_koeretoej_actionOverride=%2Fdk%2Fskat%2Fdmr%2Ffront%2Fportlets%2Fkoeretoej%2Fnested%2FfremsoegKoeretoej%2Fsearch&_pageLabel=vis_koeretoej_side', data=payload)
     soup = BeautifulSoup(response.content)
 
+    if "Ingen køretøjer fundet" in response.content:
+        return False, {
+            "error": 404
+        }
+
     values = [div.find_all('span', attrs={'class': 'value'}) for div in soup.find_all('div', attrs={'class': 'bluebox'})]
     model_string = values[0][1].text
     year_string = values[1][1].text
@@ -55,7 +62,7 @@ def _min_car_info(session, payload):
     if not car_make in CAPITALIZED_BRANDS:
         car_make = car_make.title()
 
-    return {
+    return True, {
         'car_make': car_make,
         'car_model': model_array[1].title(),
         'car_version': model_array[2],
