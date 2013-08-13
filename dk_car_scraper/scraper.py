@@ -22,6 +22,7 @@ def get_car_details(license_plate, details=False):
     car_info = _min_car_info(session, payload)
     if details:
         car_info.update(_technical_car_info(session))
+        car_info.update(_insurance_car_info(session))
         return car_info
     return car_info
 
@@ -79,4 +80,21 @@ def _technical_car_info(session):
         'gasoline_type': gasoline_type,
         'mileage': mileage,
         'max_passengers': maximum_passengers
+    }
+
+
+
+
+def _insurance_car_info(session):
+    response = session.get('https://motorregister.skat.dk/dmr-front/appmanager/skat/dmr?_nfpb=true&_windowLabel=kerne_vis_koeretoej&kerne_vis_koeretoej_actionOverride=%2Fdk%2Fskat%2Fdmr%2Ffront%2Fportlets%2Fkoeretoej%2Fnested%2FvisKoeretoej%2FselectTab&kerne_vis_koeretoejdmr_tabset_tab=3&_pageLabel=vis_koeretoej_side')
+    soup = BeautifulSoup(response.content)
+
+    insurance = [div.find_all('span', attrs={'class': 'value'}) for div in soup.find_all('div', attrs={'class': 'bluebox'})]
+
+    insurance_company = insurance[0][0].text.strip()
+    insurance_status = insurance[0][2].text.strip()
+
+    return {
+        'insurance_company': insurance_company,
+        'insurance_status': insurance_status
     }
