@@ -3,11 +3,7 @@ from setuptools import setup, find_packages
 
 DESCRIPTION = "A python module which returns details about a Danish car from its license plate number"
 
-try:
-    LONG_DESCRIPTION = open('README.rst').read()
-except:
-    LONG_DESCRIPTION = ""
-    pass
+LONG_DESCRIPTION = open('README.rst').read()
 
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
@@ -32,7 +28,7 @@ tests_require = [
 setup(
     name='dk-car-scraper',
     version='1.0.0',
-    #packages=find_packages(exclude=['tests', 'example']),
+    packages=find_packages(exclude=[]),
     author='Joshua Karjala-Svenden',
     author_email='joshua@fluxuries.com',
     url='https://github.com/joshuakarjala/dk-car-scraper/',
@@ -42,8 +38,8 @@ setup(
     platforms=['any'],
     classifiers=CLASSIFIERS,
     install_requires=INSTALL_REQUIRES,
-    tests_require=tests_require,
-    extras_require={'test': tests_require},
-    test_suite='runtests.runtests',
-    include_package_data=True,
+    # tests_require=tests_require,
+    # extras_require={'test': tests_require},
+    # test_suite='runtests.runtests',
+    #include_package_data=True,
 )
