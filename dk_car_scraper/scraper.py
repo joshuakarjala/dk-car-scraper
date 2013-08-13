@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 HIDDEN_TOKEN_NAME = 'dmrFormToken'
 SEARCH_FORM_NAME = 'kerne_vis_koeretoej{actionForm.soegeord}'
 
+CAPITALIZED_BRANDS = ['VW', 'BMW']
 
 def get_car_details(license_plate, details=False):
     session = requests.Session()
@@ -48,9 +49,15 @@ def _min_car_info(session, payload):
 
     model_array = model_string.split(', ')
 
+    #Nice formatting of car make - except if VW
+    car_make = model_array[0].title()
+
+    if not car_make in CAPITALIZED_BRANDS:
+        car_make = car_make.title()
+
     return {
-        'car_make': model_array[0].title(),
-        'car_model': model_array[1],
+        'car_make': car_make,
+        'car_model': model_array[1].title(),
         'car_version': model_array[2],
         'year': year_string.split('-')[-1]
     }
@@ -66,15 +73,24 @@ def _technical_car_info(session):
     motor_vals = [div.find_all('span') for div in motor_div.find_all('div', 'colValue')]
 
     gasoline_type = motor_vals[1][0].text
+
     mileage_value = motor_vals[2][0].text
     mileage_unit = motor_vals[2][1].text.strip()
-    mileage = '{value} {unit}'.format(value=mileage_value, unit=mileage_unit)
+    #mileage = '{value} {unit}'.format(value=mileage_value, unit=mileage_unit)
+
+    try:
+        mileage = float(mileage_value.replace(',', '.'))
+    except ValueError:
+        mileage = None
 
     car_body = soup.find_all(text=re.compile('Karrosseri'))
     car_body_div = car_body[0].parent.parent
     car_body_vals = [div.find_all('span') for div in car_body_div.find_all('div', 'colValue')]
 
-    maximum_passengers = car_body_vals[9][0].text
+    try:
+        maximum_passengers = int(car_body_vals[9][0].text)
+    except ValueError:
+        maximum_passengers = None
 
     return {
         'gasoline_type': gasoline_type,
@@ -96,5 +112,5 @@ def _insurance_car_info(session):
 
     return {
         'insurance_company': insurance_company,
-        'insurance_status': insurance_status
+        'insurance_active': insurance_status == u'Aktiv'
     }
