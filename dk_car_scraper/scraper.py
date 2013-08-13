@@ -1,19 +1,38 @@
+# -*- coding: utf-8 -*-
+
 import requests
 from bs4 import BeautifulSoup
 
-def get_car_details(license_place):
+
+HIDDEN_TOKEN_NAME = 'dmrFormToken'
+SEARCH_FORM_NAME = 'kerne_vis_koeretoej{actionForm.soegeord}'
+
+
+def get_car_details(license_plate):
     session = requests.Session()
 
+    token = _get_token(session)
+
+    payload = {
+        HIDDEN_TOKEN_NAME: token,
+        SEARCH_FORM_NAME: license_plate
+    }
+
+    return _min_car_info(session, payload)
+
+
+def _get_token(session):
+    """Gets the value of the hidden search form token."""
     response = session.get('https://motorregister.skat.dk/dmr-front/appmanager/skat/dmr?_nfls=false&_nfpb=true&_pageLabel=vis_koeretoej_side')
 
     soup = BeautifulSoup(response.content)
     token = soup.find('input', attrs={'name':'dmrFormToken'})['value']
 
-    payload = {
-        'dmrFormToken': token,
-        'kerne_vis_koeretoej{actionForm.soegeord}': license_place
-    }
+    return token
 
+
+def _min_car_info(session, payload):
+    """Gets minimal info about car. From 'Køretøj' tab."""
     response = session.post('https://motorregister.skat.dk/dmr-front/appmanager/skat/dmr?_nfpb=true&_windowLabel=kerne_vis_koeretoej&kerne_vis_koeretoej_actionOverride=%2Fdk%2Fskat%2Fdmr%2Ffront%2Fportlets%2Fkoeretoej%2Fnested%2FfremsoegKoeretoej%2Fsearch&_pageLabel=vis_koeretoej_side', data=payload)
     soup = BeautifulSoup(response.content)
 
