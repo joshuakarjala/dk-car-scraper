@@ -80,10 +80,7 @@ def _technical_car_info(session):
     motor_vals = [div.find_all('span') for div in motor_div.find_all('div', 'colValue')]
 
     gasoline_type = motor_vals[1][0].text
-
     mileage_value = motor_vals[2][0].text
-    mileage_unit = motor_vals[2][1].text.strip()
-    #mileage = '{value} {unit}'.format(value=mileage_value, unit=mileage_unit)
 
     try:
         mileage = float(mileage_value.replace(',', '.'))
