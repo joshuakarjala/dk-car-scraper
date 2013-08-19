@@ -14,7 +14,13 @@ CAPITALIZED_BRANDS = ['VW', 'BMW']
 def get_car_details(license_plate, details=False):
     session = requests.Session()
 
-    token = _get_token(session)
+    try:
+        token = _get_token(session)
+    except TypeError:
+        #Bad result - skat probably down
+        return False, {
+            "error": 500
+        }
 
     payload = {
         HIDDEN_TOKEN_NAME: token,
@@ -53,8 +59,15 @@ def _min_car_info(session, payload):
 
     values = [div.find_all('span', attrs={'class': 'value'})
               for div in soup.find_all('div', attrs={'class': 'bluebox'})]
-    model_string = values[0][1].text
-    year_string = values[1][1].text
+
+    try:
+        model_string = values[0][1].text
+        year_string = values[1][1].text
+    except IndexError:
+        #Bad result - skat probably down
+        return False, {
+            "error": 500
+        }
 
     model_array = model_string.split(', ')
 
