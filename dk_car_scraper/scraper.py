@@ -74,8 +74,8 @@ def _min_car_info(session, payload):
     # Nice formatting of car make - except if VW or BMW
     car_make = model_array[0].title()
 
-    if not car_make in CAPITALIZED_BRANDS:
-        car_make = car_make.title()
+    if car_make in CAPITALIZED_BRANDS:
+        car_make = car_make.upper()
 
     return True, {
         'car_make': car_make,
