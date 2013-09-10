@@ -27,7 +27,7 @@ tests_require = [
 
 setup(
     name='dk-car-scraper',
-    version='1.0.4',
+    version='1.0.5',
     packages=find_packages(exclude=[]),
     author='Joshua Karjala-Svenden',
     author_email='joshua@fluxuries.com',
