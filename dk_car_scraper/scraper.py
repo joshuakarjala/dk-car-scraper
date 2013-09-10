@@ -18,7 +18,7 @@ def get_car_details(license_plate, details=False):
         token = _get_token(session)
     except TypeError:
         #Bad result - skat probably down
-        return False, {
+        return {
             "error": 500
         }
 
