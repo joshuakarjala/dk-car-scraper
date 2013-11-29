@@ -62,7 +62,7 @@ def _min_car_info(session, payload):
 
     try:
         model_string = values[0][1].text
-        year_string = values[1][1].text
+        date_string = values[1][1].text
     except IndexError:
         #Bad result - skat probably down
         return False, {
@@ -70,6 +70,8 @@ def _min_car_info(session, payload):
         }
 
     model_array = model_string.split(', ')
+
+    day, month, year = date_string.split('-')
 
     # Nice formatting of car make - except if VW or BMW
     car_make = model_array[0].title()
@@ -81,7 +83,9 @@ def _min_car_info(session, payload):
         'car_make': car_make,
         'car_model': model_array[1].title(),
         'car_version': model_array[2],
-        'year': year_string.split('-')[-1]
+        'day': day,
+        'month': month,
+        'year': year
     }
 
 
