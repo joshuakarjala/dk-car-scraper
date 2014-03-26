@@ -16,10 +16,11 @@ def get_car_details(license_plate, details=False):
 
     try:
         token = _get_token(session)
-    except TypeError:
+    except (TypeError, KeyError):
         #Bad result - skat probably down
         return {
-            "error": 500
+            "error": 500,
+            "message": "Scraper not finding expected HTML structure. (Token)"
         }
 
     payload = {
@@ -32,7 +33,6 @@ def get_car_details(license_plate, details=False):
     if car_found and details:
         car_info.update(_technical_car_info(session))
         car_info.update(_insurance_car_info(session))
-        return car_info
 
     return car_info
 
@@ -54,7 +54,8 @@ def _min_car_info(session, payload):
 
     if "Ingen køretøjer fundet" in response.content:
         return False, {
-            "error": 404
+            "error": 404,
+            "message": "Car not found"
         }
 
     values = [div.find_all('span', attrs={'class': 'value'})
@@ -66,23 +67,29 @@ def _min_car_info(session, payload):
     except IndexError:
         #Bad result - skat probably down
         return False, {
-            "error": 500
+            "error": 500,
+            "message": "Scraper not finding expected HTML structure."
         }
 
-    model_array = model_string.split(', ')
-
-    day, month, year = date_string.split('-')
+    try:
+        car_make, car_model, car_version = model_string.split(', ')[:3]
+        day, month, year = date_string.split('-')
+    except ValueError:
+        return False, {
+            "error": 500,
+            "message": "Scraper not finding expected HTML structure."
+        }
 
     # Nice formatting of car make - except if VW or BMW
-    car_make = model_array[0].title()
-
-    if car_make in CAPITALIZED_BRANDS:
+    if car_make not in CAPITALIZED_BRANDS:
+        car_make = car_make.title()
+    else:
         car_make = car_make.upper()
 
     return True, {
         'car_make': car_make,
-        'car_model': model_array[1].title(),
-        'car_version': model_array[2],
+        'car_model': car_model.title(),
+        'car_version': car_version,
         'day': day,
         'month': month,
         'year': year
@@ -96,8 +103,7 @@ def _technical_car_info(session):
 
     motor = soup.find_all(text=re.compile('Motor osv.'))
     motor_div = motor[0].parent.parent
-    motor_vals = [div.find_all('span')
-                  for div in motor_div.find_all('div', 'colValue')]
+    motor_vals = [div.find_all('span') for div in motor_div.find_all('div', 'colValue')]
 
     gasoline_type = motor_vals[1][0].text
     mileage_value = motor_vals[2][0].text
