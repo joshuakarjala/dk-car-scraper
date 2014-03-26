@@ -14,9 +14,8 @@ CAPITALIZED_BRANDS = ['VW', 'BMW']
 def get_car_details(license_plate, details=False):
     session = requests.Session()
 
-    try:
-        token = _get_token(session)
-    except (TypeError, KeyError):
+    token = _get_token(session)
+    if not token:
         #Bad result - skat probably down
         return {
             "error": 500,
@@ -42,9 +41,11 @@ def _get_token(session):
     response = session.get('https://motorregister.skat.dk/dmr-front/appmanager/skat/dmr?_nfls=false&_nfpb=true&_pageLabel=vis_koeretoej_side')
 
     soup = BeautifulSoup(response.content)
-    token = soup.find('input', attrs={'name': 'dmrFormToken'})['value']
 
-    return token
+    try:
+        return soup.find('input', attrs={'name': 'dmrFormToken'})['value']
+    except (TypeError, KeyError):
+        return None
 
 
 def _min_car_info(session, payload):
@@ -102,25 +103,41 @@ def _technical_car_info(session):
     soup = BeautifulSoup(response.content)
 
     motor = soup.find_all(text=re.compile('Motor osv.'))
-    motor_div = motor[0].parent.parent
-    motor_vals = [div.find_all('span') for div in motor_div.find_all('div', 'colValue')]
-
-    gasoline_type = motor_vals[1][0].text
-    mileage_value = motor_vals[2][0].text
 
     try:
-        mileage = float(mileage_value.replace(',', '.'))
-    except ValueError:
+        motor_div = motor[0].parent.parent
+        motor_vals = [div.find_all('span') for div in motor_div.find_all('div', 'colValue')]
+
+        try:
+            gasoline_type = motor_vals[1][0].text
+        except (IndexError, AttributeError):
+            gasoline_type = None
+
+        try:
+            mileage_value = motor_vals[2][0].text
+        except (IndexError, AttributeError):
+            mileage_value = None
+
+        try:
+            mileage = float(mileage_value.replace(',', '.'))
+        except ValueError:
+            mileage = None
+    except (IndexError, AttributeError):
+        gasoline_type = None
         mileage = None
 
     car_body = soup.find_all(text=re.compile('Karrosseri'))
-    car_body_div = car_body[0].parent.parent
-    car_body_vals = [div.find_all('span')
-                     for div in car_body_div.find_all('div', 'colValue')]
 
     try:
-        maximum_passengers = int(car_body_vals[9][0].text)
-    except ValueError:
+        car_body_div = car_body[0].parent.parent
+        car_body_vals = [div.find_all('span')
+                         for div in car_body_div.find_all('div', 'colValue')]
+
+        try:
+            maximum_passengers = int(car_body_vals[9][0].text)
+        except ValueError:
+            maximum_passengers = None
+    except (IndexError, AttributeError):
         maximum_passengers = None
 
     return {
@@ -137,8 +154,15 @@ def _insurance_car_info(session):
     insurance = [div.find_all('span', attrs={'class': 'value'})
                  for div in soup.find_all('div', attrs={'class': 'bluebox'})]
 
-    insurance_company = insurance[0][0].text.strip()
-    insurance_status = insurance[0][2].text.strip()
+    try:
+        insurance_company = insurance[0][0].text.strip()
+    except (IndexError, AttributeError):
+        insurance_company = None
+
+    try:
+        insurance_status = insurance[0][2].text.strip()
+    except (IndexError, AttributeError):
+        insurance_status = None
 
     return {
         'insurance_company': insurance_company,
