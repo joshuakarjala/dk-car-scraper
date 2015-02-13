@@ -76,11 +76,10 @@ def _min_car_info(session, payload):
     values = [div.find_all('span', attrs={'class': 'value'})
               for div in soup.find_all('div', attrs={'class': 'bluebox'})]
 
-    try:
-        model_string = values[0][1].text
-        date_string = values[1][1].text
-    except IndexError:
-        #Bad result - skat probably down
+    r1, model_string = _get_text_value(values, 0, 1)
+    r2, date_string = _get_text_value(values, 1, 1)
+
+    if not r1 and not r2:
         return False, {
             "error": 500,
             "message": "Scraper not finding expected HTML structure."
