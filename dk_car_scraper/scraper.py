@@ -94,6 +94,11 @@ def _min_car_info(session, payload):
             "message": "Scraper not finding expected HTML structure."
         }
 
+    # Optional values
+    r1, car_type = _get_text_value(values, 0, 2)
+    r2, car_owner_type = _get_text_value(values, 1, 2)
+    r3, last_update = _get_text_value(values, 1, 3)
+
     # Nice formatting of car make - except if VW or BMW
     if car_make not in CAPITALIZED_BRANDS:
         car_make = car_make.title()
@@ -104,9 +109,14 @@ def _min_car_info(session, payload):
         'car_make': car_make,
         'car_model': car_model.title(),
         'car_version': car_version,
+
+        'car_type': car_type,
+        'car_owner_type': car_owner_type,
+
         'day': day,
         'month': month,
-        'year': year
+        'year': year,
+        'last_update': last_update,
     }
 
 
