@@ -2,8 +2,7 @@
 import re
 
 import requests
-from bs4 import BeautifulSoup
-
+from bs4 import BeautifulSoup, element
 
 HIDDEN_TOKEN_NAME = 'dmrFormToken'
 SEARCH_FORM_NAME = 'kerne_vis_koeretoej{actionForm.soegeord}'
@@ -11,12 +10,27 @@ SEARCH_FORM_NAME = 'kerne_vis_koeretoej{actionForm.soegeord}'
 CAPITALIZED_BRANDS = ['VW', 'BMW']
 
 
+def _get_text_value(content, *args):
+    """Returns the value inside the content"""
+    try:
+        value = content
+        for index in list(args):
+            value = value[index]
+
+        if value != content and type(value) == element.Tag:
+            return True, value.text
+
+    except (IndexError, KeyError, AttributeError):
+        return False, None
+    return True, None
+
+
 def get_car_details(license_plate, details=False):
     session = requests.Session()
 
     token = _get_token(session)
     if not token:
-        #Bad result - skat probably down
+        # Bad result - skat probably down
         return {
             "error": 500,
             "message": "Scraper not finding expected HTML structure. (Token)"
@@ -62,11 +76,10 @@ def _min_car_info(session, payload):
     values = [div.find_all('span', attrs={'class': 'value'})
               for div in soup.find_all('div', attrs={'class': 'bluebox'})]
 
-    try:
-        model_string = values[0][1].text
-        date_string = values[1][1].text
-    except IndexError:
-        #Bad result - skat probably down
+    r1, model_string = _get_text_value(values, 0, 1)
+    r2, date_string = _get_text_value(values, 1, 1)
+
+    if not r1 and not r2:
         return False, {
             "error": 500,
             "message": "Scraper not finding expected HTML structure."
@@ -81,6 +94,26 @@ def _min_car_info(session, payload):
             "message": "Scraper not finding expected HTML structure."
         }
 
+    # Optional values
+    r1, car_type = _get_text_value(values, 0, 2)
+    r2, car_owner_type = _get_text_value(values, 1, 2)
+    r3, last_update = _get_text_value(values, 1, 3)
+
+    # Mileage values
+    stand = soup.find_all(text=re.compile('Stand'))
+    stand_section = stand[0].parent.parent
+    stand_vals = [
+        div.find_all('span')
+        for div in stand_section.find_all('div', 'colValue')
+    ]
+
+    r4, mileage = _get_text_value(stand_vals, 0, 0)
+    if r4 and mileage:
+        if "-" in mileage:
+            mileage = None
+        else:
+            mileage = int(mileage) * 1000
+
     # Nice formatting of car make - except if VW or BMW
     if car_make not in CAPITALIZED_BRANDS:
         car_make = car_make.title()
@@ -91,9 +124,15 @@ def _min_car_info(session, payload):
         'car_make': car_make,
         'car_model': car_model.title(),
         'car_version': car_version,
+
+        'car_type': car_type,
+        'car_purpose': car_owner_type,
+        'car_mileage': mileage,
+
         'day': day,
         'month': month,
-        'year': year
+        'year': year,
+        'last_update': last_update,
     }
 
 
@@ -106,22 +145,19 @@ def _technical_car_info(session):
 
     try:
         motor_div = motor[0].parent.parent
-        motor_vals = [div.find_all('span') for div in motor_div.find_all('div', 'colValue')]
+        motor_vals = [
+            div.find_all('span')
+            for div in motor_div.find_all('div', 'colValue')
+        ]
 
-        try:
-            gasoline_type = motor_vals[1][0].text
-        except (IndexError, AttributeError):
-            gasoline_type = None
-
-        try:
-            mileage_value = motor_vals[2][0].text
-        except (IndexError, AttributeError):
-            mileage_value = None
+        r1, gasoline_type = _get_text_value(motor_vals, 1, 0)
+        r2, mileage_value = _get_text_value(motor_vals, 2, 0)
 
         try:
             mileage = float(mileage_value.replace(',', '.'))
         except ValueError:
             mileage = None
+
     except (IndexError, AttributeError):
         gasoline_type = None
         mileage = None
@@ -134,15 +170,19 @@ def _technical_car_info(session):
                          for div in car_body_div.find_all('div', 'colValue')]
 
         try:
-            maximum_passengers = int(car_body_vals[9][0].text)
+            r1, maximum_passengers = _get_text_value(car_body_vals, 9, 0)
+            if r1 and maximum_passengers:
+                maximum_passengers = int(maximum_passengers)
+
         except ValueError:
             maximum_passengers = None
+
     except (IndexError, AttributeError):
         maximum_passengers = None
 
     return {
         'gasoline_type': gasoline_type,
-        'mileage': mileage,
+        'mileage_per_liter': mileage,
         'max_passengers': maximum_passengers
     }
 
@@ -154,15 +194,13 @@ def _insurance_car_info(session):
     insurance = [div.find_all('span', attrs={'class': 'value'})
                  for div in soup.find_all('div', attrs={'class': 'bluebox'})]
 
-    try:
-        insurance_company = insurance[0][0].text.strip()
-    except (IndexError, AttributeError):
-        insurance_company = None
+    r1, insurance_company = _get_text_value(insurance, 0, 0)
+    if insurance_company:
+        insurance_company = insurance_company.strip()
 
-    try:
-        insurance_status = insurance[0][2].text.strip()
-    except (IndexError, AttributeError):
-        insurance_status = None
+    r2, insurance_status = _get_text_value(insurance, 0, 2)
+    if insurance_status:
+        insurance_status = insurance_status.strip()
 
     return {
         'insurance_company': insurance_company,
