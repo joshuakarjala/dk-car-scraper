@@ -129,22 +129,19 @@ def _technical_car_info(session):
 
     try:
         motor_div = motor[0].parent.parent
-        motor_vals = [div.find_all('span') for div in motor_div.find_all('div', 'colValue')]
+        motor_vals = [
+            div.find_all('span')
+            for div in motor_div.find_all('div', 'colValue')
+        ]
 
-        try:
-            gasoline_type = motor_vals[1][0].text
-        except (IndexError, AttributeError):
-            gasoline_type = None
-
-        try:
-            mileage_value = motor_vals[2][0].text
-        except (IndexError, AttributeError):
-            mileage_value = None
+        r1, gasoline_type = _get_text_value(motor_vals, 1, 0)
+        r2, mileage_value = _get_text_value(motor_vals, 2, 0)
 
         try:
             mileage = float(mileage_value.replace(',', '.'))
         except ValueError:
             mileage = None
+
     except (IndexError, AttributeError):
         gasoline_type = None
         mileage = None
@@ -157,9 +154,11 @@ def _technical_car_info(session):
                          for div in car_body_div.find_all('div', 'colValue')]
 
         try:
-            maximum_passengers = int(car_body_vals[9][0].text)
+            maximum_passengers = _get_text_value(car_body_vals, 9, 0)
+            maximum_passengers = int(maximum_passengers)
         except ValueError:
             maximum_passengers = None
+
     except (IndexError, AttributeError):
         maximum_passengers = None
 
@@ -177,10 +176,9 @@ def _insurance_car_info(session):
     insurance = [div.find_all('span', attrs={'class': 'value'})
                  for div in soup.find_all('div', attrs={'class': 'bluebox'})]
 
-    try:
-        insurance_company = insurance[0][0].text.strip()
-    except (IndexError, AttributeError):
-        insurance_company = None
+    r1, insurance_company = _get_text_value(insurance, 0, 0)
+    if insurance_company:
+        insurance_company = insurance_company.strip()
 
     try:
         insurance_status = insurance[0][2].text.strip()
