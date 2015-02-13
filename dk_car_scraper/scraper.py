@@ -154,8 +154,10 @@ def _technical_car_info(session):
                          for div in car_body_div.find_all('div', 'colValue')]
 
         try:
-            maximum_passengers = _get_text_value(car_body_vals, 9, 0)
-            maximum_passengers = int(maximum_passengers)
+            r1, maximum_passengers = _get_text_value(car_body_vals, 9, 0)
+            if r1 and maximum_passengers:
+                maximum_passengers = int(maximum_passengers)
+
         except ValueError:
             maximum_passengers = None
 
