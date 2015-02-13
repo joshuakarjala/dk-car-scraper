@@ -126,7 +126,7 @@ def _min_car_info(session, payload):
         'car_version': car_version,
 
         'car_type': car_type,
-        'car_owner_type': car_owner_type,
+        'car_purpose': car_owner_type,
         'car_mileage': mileage,
 
         'day': day,
