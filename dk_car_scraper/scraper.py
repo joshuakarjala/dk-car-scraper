@@ -2,8 +2,7 @@
 import re
 
 import requests
-from bs4 import BeautifulSoup
-
+from bs4 import BeautifulSoup, element
 
 HIDDEN_TOKEN_NAME = 'dmrFormToken'
 SEARCH_FORM_NAME = 'kerne_vis_koeretoej{actionForm.soegeord}'
@@ -11,12 +10,27 @@ SEARCH_FORM_NAME = 'kerne_vis_koeretoej{actionForm.soegeord}'
 CAPITALIZED_BRANDS = ['VW', 'BMW']
 
 
+def _get_text_value(content, *args):
+    """Returns the value inside the content"""
+    try:
+        value = content
+        for index in list(args):
+            value = value[index]
+
+        if value != content and type(value) == element.Tag:
+            return True, value.text
+
+    except (IndexError, KeyError, AttributeError):
+        return False, None
+    return True, None
+
+
 def get_car_details(license_plate, details=False):
     session = requests.Session()
 
     token = _get_token(session)
     if not token:
-        #Bad result - skat probably down
+        # Bad result - skat probably down
         return {
             "error": 500,
             "message": "Scraper not finding expected HTML structure. (Token)"
