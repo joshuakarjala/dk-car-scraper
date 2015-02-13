@@ -166,7 +166,7 @@ def _technical_car_info(session):
 
     return {
         'gasoline_type': gasoline_type,
-        'mileage': mileage,
+        'mileage_per_liter': mileage,
         'max_passengers': maximum_passengers
     }
 
