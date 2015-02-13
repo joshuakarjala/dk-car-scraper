@@ -99,6 +99,21 @@ def _min_car_info(session, payload):
     r2, car_owner_type = _get_text_value(values, 1, 2)
     r3, last_update = _get_text_value(values, 1, 3)
 
+    # Mileage values
+    try:
+        stand = soup.find_all(text=re.compile('Stand'))  # Stand?
+        stand_section = stand[0].parent.parent
+        stand_vals = [
+            div.find_all('span')
+            for div in stand_section.find_all('div', 'colValue')
+        ]
+
+        r4, mileage = _get_text_value(stand_vals, 0)
+        if r4 and mileage:
+            mileage = float(mileage) * 1000
+    except (IndexError, AttributeError):
+        mileage = None
+
     # Nice formatting of car make - except if VW or BMW
     if car_make not in CAPITALIZED_BRANDS:
         car_make = car_make.title()
@@ -112,6 +127,7 @@ def _min_car_info(session, payload):
 
         'car_type': car_type,
         'car_owner_type': car_owner_type,
+        'car_mileage': mileage,
 
         'day': day,
         'month': month,
