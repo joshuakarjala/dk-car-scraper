@@ -180,10 +180,9 @@ def _insurance_car_info(session):
     if insurance_company:
         insurance_company = insurance_company.strip()
 
-    try:
-        insurance_status = insurance[0][2].text.strip()
-    except (IndexError, AttributeError):
-        insurance_status = None
+    r2, insurance_status = _get_text_value(insurance, 0, 2)
+    if insurance_status:
+        insurance_status = insurance_status.strip()
 
     return {
         'insurance_company': insurance_company,
