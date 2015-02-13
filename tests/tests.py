@@ -1,8 +1,8 @@
 from dk_car_scraper.scraper import get_car_details
 
 
-def test():
-    car_details = get_car_details("AD14219", details=True)
+def _one_car(license):
+    car_details = get_car_details(license, details=True)
 
     try:
         assert type(car_details["insurance_company"]) == unicode
@@ -30,3 +30,15 @@ def test():
             assert type(car_details["max_passengers"]) == int
     except KeyError, err:
         raise err
+
+
+def test():
+    licenses = [
+        "AC90605",
+        "AP66662",
+        "YE22760",
+        "AD14219"
+    ]
+
+    for license in licenses:
+        _one_car(license)
